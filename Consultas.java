@@ -1,25 +1,26 @@
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Predicate;
 
 public class Consultas {
-    private Repositorio dataRepository;
-    private Predicate<RegistroDoTempo> defaultCondition;
+    private Repositorio datas;
+    private Predicate<RegistroDoTempo> condicao;
 
-    public Consultas(Repositorio dataRepository) {
-        this.dataRepository = dataRepository;
-        this.defaultCondition = registro -> registro.getPrecipitacao() > 10.0; // Exemplo de condição padrão
+    public Consultas(Repositorio datas) {
+        this.datas = datas;
+        this.condicao = registro -> registro.getPrecipitacao() > 10.0; // Exemplo de condição padrão
     }
 
     public List<String> datasEmQueChoveuMaisDe(double milimetros) {
-        return dataRepository.getRegistros().stream()
+        return datas.getRegistros().stream()
             .filter(r -> r.getPrecipitacao() > milimetros)
             .map(r -> r.getDia() + "/" + r.getMes() + "/" + r.getAno())
             .toList();
     }
 
     public String diaQueMaisChoveuNoAno(int ano) {
-        RegistroDoTempo registro = dataRepository.getRegistros().stream()
+        RegistroDoTempo registro = datas.getRegistros().stream()
             .filter(reg -> reg.getAno() == ano)
             .max(Comparator.comparing(RegistroDoTempo::getPrecipitacao))
             .orElseThrow(IllegalArgumentException::new);
@@ -27,13 +28,19 @@ public class Consultas {
     }
 
     public void alteraConsultaPadrao(Predicate<RegistroDoTempo> consulta) {
-        this.defaultCondition = consulta;
+        this.condicao = consulta;
     }
 
-    public List<String> datasEmQue() {
-        return dataRepository.getRegistros().stream()
-            .filter(defaultCondition)
-            .map(r -> r.getDia() + "/" + r.getMes() + "/" + r.getAno())
-            .toList();
+    public List<Data> diasEmQue() {
+        List<Data> result = new ArrayList<>();
+        List<RegistroDoTempo> registros = datas.getRegistros();
+
+        for (RegistroDoTempo registro : registros) {
+            if (condicao.test(registro)) {
+                result.add(new Data(registro.getDia(), registro.getMes(), registro.getAno()));
+            }
+        }
+
+        return result;
     }
 }
